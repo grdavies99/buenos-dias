@@ -8,7 +8,7 @@
       	horizAlign="center"
       	vertAlign="center"
       	/>
-        <NetworkDiscoveryTask/>
+        <NetworkDiscoveryTask id="udptask"/>
     </children>
 <!-- BrightScript Portion -->
 <script type="text/brightscript" >
@@ -20,7 +20,8 @@
   function init()
     m.top.setFocus(true)
     m.myLabel = m.top.findNode("myLabel")
-    
+    m.bonjourTask = m.top.findNode("udptask")
+    m.bonjourTask.control = "RUN"
     'Set the font size
     m.myLabel.font.size=92
 
