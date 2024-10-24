@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="NetworkDiscoveryTask" extends="Scene"> 
+	
+    <!-- BrightScript Portion -->
+    <script type="text/brightscript" uri="NetworkDiscoveryTask.brs" />
+</component>
