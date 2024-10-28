@@ -14,29 +14,38 @@ function getContent ()
     addr.SetHostName("224.0.0.251")
     udp.setSendToAddress(addr) ' peer IP and port
     udp.notifyReadable(true)
-    udp.SetTTL(255)
-    stop
     deviceName = Createobject("roDeviceInfo").GetFriendlyName()
     payload = CreateObject("roByteArray")
-    ' 01005e0000fbbcd7d46cf913080045000054cb614000ff110cedc0a801a6e00000fb14e914e90040c77f000000000001000000000000
-    payload.fromHexString("1253747265616d696e6720537469636b20344b085f676c616e7365045f746370056c6f63616c0000218001")
-    ?payload.ToAsciiString()
+    header = CreateObject("roByteArray")
+    ' master
+    ' payload.fromHexString("0000000000010000000000001253747265616d696e6720537469636b20344b085f616972706c6179045f746370056c6f63616c0000218001")
+' 0000000000010000000000014506978656c203220426f6e736f69722044656d6f115f626f6e736f697264656d6f2e5f746370056c6f63616c0000108001
+
+    ' header.fromHexString("01005e0000fbb2a62aaeb3ca0800450000aeece34000ff11eb11c0a801a5e00000fb14e914e9009a46bc")
+    payload.fromHexString("0000000000010000000000001253747265616d696e6720537469636b20344b085f616972706c6179045f746370056c6f63616c0000ff8001")
+    ' payload.fromHexString("0000000000010001000000000c5f626f6e736f697264656d6f045f746370056c6f63616c0000ff0001c00c000c000100001194001714506978656c203220426f6e736f69722044656d6fc00c")
+    ?udp.SetMulticastLoop(true)
+    udp.setMulticastTTL(255)
+    ?udp.JoinGroup(addr)
+    ' udp.send(payload, 40, payload.count()-0)
     udp.send(payload, 0, payload.count())
-    continue = udp.eOK()
+    
+    continue = udp.eSuccess()
     While continue
         event = wait(0, msgPort)
         If type(event)="roSocketEvent"
-        If event.getSocketID()=udp.getID()
+            If event.getSocketID()=udp.getID()
                 If udp.isReadable()
                     message = udp.receiveStr(512) ' max 512 characters
-                    ' print "Received message: '"; message; "'"
+                    print "Received message: '"; message; "'"
                 End If
             End If
         Else If event=invalid
             print "Timeout"
-            udp.sendStr(message) ' periodic send
+            ' udp.send(payload,0, payload.count()) ' periodic send
         End If
     End While
     udp.close() ' would happen automatically as udp goes out of scope
 
 end function
+
