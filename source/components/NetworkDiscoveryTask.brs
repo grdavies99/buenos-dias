@@ -5,6 +5,26 @@ function init()
 end function
 
 function getContent ()
+    
+    payload = CreateObject("roByteArray")
+    header = {
+        "query": "0000000000010000000000001",
+        "response": "000084000001000000000000"
+    }
+    service = {
+        "glanse": "5f676c616e73652e5f75647056c6f63616c",
+        "airplay": "85f616972706c6179045f746370056c6f63616c00"
+    }
+    tail = {
+        "question" : {
+            "any": "00ff8001",
+            "SRV": "00218001",
+            "A": "00018001",
+            "AAAA": "001c8001",
+            "PTR": "000c8001"
+        }
+    }
+
     msgPort = createobject("roMessagePort")
     udp = createobject("roDatagramSocket")
     udp.setMessagePort(msgPort) 'notifications for udp come to msgPort
@@ -14,37 +34,39 @@ function getContent ()
     addr.SetHostName("224.0.0.251")
     udp.setSendToAddress(addr) ' peer IP and port
     udp.notifyReadable(true)
-    deviceName = Createobject("roDeviceInfo").GetFriendlyName()
-    payload = CreateObject("roByteArray")
-    header = CreateObject("roByteArray")
+
+
+
+    
     ' master
     ' payload.fromHexString("0000000000010000000000001253747265616d696e6720537469636b20344b085f616972706c6179045f746370056c6f63616c0000218001")
+    ' getting response
+    ' payload.fromHexString("0000000000010000000000001250747265616d696e6720537469636b20344b085f616972706c6179045f746370056c6f63616c0000ff8001")
 ' 0000000000010000000000014506978656c203220426f6e736f69722044656d6f115f626f6e736f697264656d6f2e5f746370056c6f63616c0000108001
 
     ' header.fromHexString("01005e0000fbb2a62aaeb3ca0800450000aeece34000ff11eb11c0a801a5e00000fb14e914e9009a46bc")
-    payload.fromHexString("0000000000010000000000001253747265616d696e6720537469636b20344b085f616972706c6179045f746370056c6f63616c0000ff8001")
-    ' payload.fromHexString("0000000000010001000000000c5f626f6e736f697264656d6f045f746370056c6f63616c0000ff0001c00c000c000100001194001714506978656c203220426f6e736f69722044656d6fc00c")
+    accumulated = header.query + service.glanse + tail.question.any
+    payload.fromHexString("000000000001000000000000085f616972706c6179045f746370056c6f63616c00000c0001")
     ?udp.SetMulticastLoop(true)
     udp.setMulticastTTL(255)
     ?udp.JoinGroup(addr)
-    ' udp.send(payload, 40, payload.count()-0)
     udp.send(payload, 0, payload.count())
-    
-    continue = udp.eSuccess()
+    recieve = CreateObject("roByteArray")
+    continue = udp.eOk()
     While continue
         event = wait(0, msgPort)
         If type(event)="roSocketEvent"
-            If event.getSocketID()=udp.getID()
-                If udp.isReadable()
-                    message = udp.receiveStr(512) ' max 512 characters
-                    print "Received message: '"; message; "'"
-                End If
+            If event.getSocketID()=udp.getID() and udp.isReadable()
+                    message = udp.receive(recieve, 0, 1024) ' max 512 characters
+                    ' print "Received message: '"; message; "'"
             End If
         Else If event=invalid
             print "Timeout"
             ' udp.send(payload,0, payload.count()) ' periodic send
         End If
+        continue = udp.eOk()
     End While
+    stop
     udp.close() ' would happen automatically as udp goes out of scope
 
 end function
