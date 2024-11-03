@@ -35,30 +35,24 @@ function getContent ()
     udp.setSendToAddress(addr) ' peer IP and port
     udp.notifyReadable(true)
 
-
-
-    
-    ' master
-    ' payload.fromHexString("0000000000010000000000001253747265616d696e6720537469636b20344b085f616972706c6179045f746370056c6f63616c0000218001")
-    ' getting response
-    ' payload.fromHexString("0000000000010000000000001250747265616d696e6720537469636b20344b085f616972706c6179045f746370056c6f63616c0000ff8001")
-' 0000000000010000000000014506978656c203220426f6e736f69722044656d6f115f626f6e736f697264656d6f2e5f746370056c6f63616c0000108001
-
-    ' header.fromHexString("01005e0000fbb2a62aaeb3ca0800450000aeece34000ff11eb11c0a801a5e00000fb14e914e9009a46bc")
     accumulated = header.query + service.glanse + tail.question.any
     payload.fromHexString("000000000001000000000000085f616972706c6179045f746370056c6f63616c00000c0001")
     ?udp.SetMulticastLoop(true)
     udp.setMulticastTTL(255)
     ?udp.JoinGroup(addr)
-    udp.send(payload, 0, payload.count())
     recieve = CreateObject("roByteArray")
+    for i = 0 to 1024 
+        recieve.Push(i) 
+    end for
+    udp.send(payload, 0, payload.count())
     continue = udp.eOk()
     While continue
         event = wait(0, msgPort)
         If type(event)="roSocketEvent"
             If event.getSocketID()=udp.getID() and udp.isReadable()
                     message = udp.receive(recieve, 0, 1024) ' max 512 characters
-                    ' print "Received message: '"; message; "'"
+                    message = SafeTextConvert(recieve)
+                    stop
             End If
         Else If event=invalid
             print "Timeout"
@@ -71,3 +65,12 @@ function getContent ()
 
 end function
 
+function SafeTextConvert(bytearray)
+    retValue = ""
+    for each byte in bytearray
+        if byte > 32
+            retValue = retvalue+chr(byte)
+        end if
+    end for 
+    return retValue
+end function
