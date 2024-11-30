@@ -1,7 +1,7 @@
 function init()
     'ip address 224.0.0.251  udp port  5353
     m.top.functionName = "getContent"
-    
+    m.responselength = 2048
 end function
 
 function getContent ()
@@ -17,25 +17,25 @@ function getContent ()
     udp.setMulticastTTL(255)
     recieve = CreateObject("roByteArray")
     mask = CreateObject("roByteArray")
-    for i = 0 to 1024 
+    for i = 0 to m.responselength 
         recieve.Push(i)
         mask.push(i)
     end for
-    ' serviceName = "_bonsoirdemo._tcp.local"
-    serviceName = "_airplay._tcp.local"
-    payload = CreateMDNSQuery(serviceName, 12)
+    serviceName = "_adge._tcp.local"
+    payload = CreateMDNSQuery(serviceName, 1)
     udp.send(payload, 0, payload.count())
     m.results = []
     continue = udp.eOk()
     While continue
-        event = wait(1000, msgPort)
+        event = wait(0, msgPort)
         If type(event)="roSocketEvent"
             If event.getSocketID()=udp.getID() and udp.isReadable()
-                    message = udp.receive(recieve, 0, 1024) ' max 512 characters
+                    message = udp.receive(recieve, 0, m.responselength) ' max 512 characters
                     parsed = ParseMDNSResponse(recieve)
                     if parsed.ancount > 0 
                         for each ans in parsed.answers
-                            if ans.name = serviceName then m.results.push(parsed)
+                            if ans.name = serviceName then stop'm.results.push(parsed)
+                            m.top.localclients = m.results
                         end for
                     end if
             End If
@@ -45,7 +45,6 @@ function getContent ()
             continue = false
         End If
         recieve = mask
-        ' if m.results.count() > 0 then continue = false
     End While
     m.top.localclients = m.results
     udp.close() ' would happen automatically as udp goes out of scope

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="tcpServer" extends="Task"> 
+	
+    <interface>
+    </interface>
+    <!-- BrightScript Portion -->
+    <script type="text/brightscript" uri="tcpServer.brs" />
+</component>
