@@ -14,8 +14,7 @@ sub Main()
 
     'Create a scene and load /components/helloworld.xml'
     scene = screen.CreateScene("HelloWorld")
-    screen.show()
-    ' vscode_rdb_on_device_component_entry
+    screen.show()' vscode_rdb_on_device_component_entry
 
     while(true)
         msg = wait(0, m.port)

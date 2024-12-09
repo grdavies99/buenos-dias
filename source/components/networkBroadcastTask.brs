@@ -47,8 +47,9 @@ function getContent ()
             If event.getSocketID()=udp.getID() and udp.isReadable()
                     message = udp.receive(recieve, 0, m.responselength) ' max 512 characters
                     parsed = ParseMDNSResponse(recieve)
-                    if parsed.qdcount = 1 and parsed.questions[0].name = di.GetFriendlyName()+"."+adgeName
-                        udp.send(parsed, 0, parsed.count())
+                    if parsed.qdcount >= 1 and parsed.questions[0].name = adgeName
+                        ?"sent"
+                        udp.send(payload, 0, payload.count())
                     end if
                     ' if parsed.ancount > 0 
                     '     for each ans in parsed.answers
@@ -112,7 +113,7 @@ function ParseMDNSResponse(byteArray as Object) as Object
         question = {}
         question["name"] = ReadName(byteArray, offset)
         if len(question.name) > 1000 then return response
-        ?question.name
+        ' ?question.name
         offset += len(question["name"]) + 2  ' Advance past name and null byte
 
         question["type"] = ReadUInt16(bytearray, offset)
@@ -129,7 +130,7 @@ function ParseMDNSResponse(byteArray as Object) as Object
         answer = {}
         answer["name"] = ReadName(byteArray, offset)
         if len(answer.name) > 100 then return response
-        ?answer.name
+        ' ?answer.name
         offset += len(answer["name"]) + 2  ' Advance past name and null byte
         answer["type"] = ReadUInt16(bytearray, offset)
         offset += 2
