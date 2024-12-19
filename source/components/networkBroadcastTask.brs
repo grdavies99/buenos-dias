@@ -30,10 +30,10 @@ function getContent ()
 
     srv = {
         srvRecordName:di.GetFriendlyName()+"."+adgeName 
-        srvPriority:0 
-        srvWeight: 0 
-        srvPort: 7000 
-        srvTarget: di.GetFriendlyName()+".local"
+        Priority:0 
+        weight: 0 
+        port: 16809
+        target: di.GetFriendlyName()+".local"
     }    ' Add the NSEC record
     
     nsec = CreateNSECAnswer(4500, srv) ' NSEC record
@@ -47,16 +47,32 @@ function getContent ()
             If event.getSocketID()=udp.getID() and udp.isReadable()
                     message = udp.receive(recieve, 0, m.responselength) ' max 512 characters
                     parsed = ParseMDNSResponse(recieve)
-                    if parsed.qdcount >= 1 and parsed.questions[0].name = adgeName
-                        ?"sent"
-                        udp.send(payload, 0, payload.count())
+                    ' if parsed.qdcount >= 1 then ?parsed.questions[0].name
+                    if parsed.qdcount >= 1 
+                        payl = CreateObject("roByteArray")
+                        for each question in parsed.questions
+                            ?question.name
+                            if (question.name = adgeName or question.name = di.GetFriendlyName()+"."+adgeName)
+                                if question.type = 12 
+                                    ?"sent ptr"
+                                    payl.append(CreateAnswer(adgeName, 12, 4500, srv.srvRecordName))
+                                else if question.type = 1
+                                    ?"sent A"
+                                    payl.append(CreateAnswer(srv.target, 1, 4500, "192.168.1.166"))
+                                else if question.type = 33
+                                    ?"sent SRV"
+                                    payl.append(CreateAnswer(srv.srvRecordName, 33, 4500, srv))
+                                else if question.type = 16
+                                    ?"sent txt"
+                                    payl.append(CreateAnswer(adgeName, 16, 4500, srv))
+                                else if question.type = 47
+                                    ?"sent nsec"
+                                    payl.append(CreateAnswer(srv.target, 47, 4500, {nextDomain: srv.target, typeBitMaps: [64]}))
+                                end if
+                            end if
+                        end for
+                        udp.send(payl, 0, payl.count())
                     end if
-                    ' if parsed.ancount > 0 
-                    '     for each ans in parsed.answers
-                    '         if ans.name = serviceName then stop'm.results.push(parsed)
-                    '         m.top.localclients = m.results
-                    '     end for
-                    ' end if
             End If
             continue = udp.eOk()
         Else If event=invalid
@@ -269,20 +285,20 @@ function CreateMDNSAnswer(domainName as String, ttl as Integer, aRecordData as S
     byteArray.Push(2)    ' ARCOUNT low byte (0)
 
 
-    ' Add the PTR record
+    ' Add the PTR record _adge._tcp.local
     byteArray.Append(AddRecord(ptrRecordName, 12, ttl, srv.srvRecordName)) ' PTR record
 
     ' Add the DNS-SD PTR record
     byteArray.Append(AddRecord("_services._dns-sd._udp.local", 12, ttl, ptrRecordName)) ' DNS-SD PTR record
 
-    ' Add the SRV record
-    byteArray.Append(AddRecord(srv.srvRecordName, 33, ttl, {priority: srv.srvPriority, weight: srv.srvWeight, port: srv.srvPort, target: srv.srvTarget})) ' SRV record
+    ' Add the SRV record Roku Ultra._adge._tcp.local
+    byteArray.Append(AddRecord(srv.srvRecordName, 33, ttl, {priority: srv.Priority, weight: srv.weight, port: srv.port, target: srv.target})) ' SRV record
     
-    ' Add the NSEC record
-    byteArray.Append(AddRecord(srv.srvTarget, 47, ttl, {nextDomain: srv.srvTarget, typeBitMaps: [64]})) ' NSEC record
+    ' Add the NSEC record Roku Ultra.local
+    byteArray.Append(AddRecord(srv.target, 47, ttl, {nextDomain: srv.target, typeBitMaps: [64]})) ' NSEC record
 
-    ' Add the A record
-    byteArray.Append(AddRecord(srv.srvTarget, 1, ttl, aRecordData)) ' A record, IPv4 address
+    ' Add the A record Roku Ultra.local
+    byteArray.Append(AddRecord(srv.target, 1, ttl, aRecordData)) ' A record, IPv4 address
     return byteArray
 end function
 
@@ -303,9 +319,30 @@ function CreateNSECAnswer(ttl as Integer, srv as object) as Object
     byteArray.Push(0)    ' ARCOUNT high byte (0)
     byteArray.Push(0)    ' ARCOUNT low byte (0)
 
-    ' Add the SRV record
-    byteArray.Append(AddRecord(srv.srvRecordName, 33, ttl, {priority: srv.srvPriority, weight: srv.srvWeight, port: srv.srvPort, target: srv.srvTarget})) ' SRV record
+    ' Add the NSEC record Roku Ultra.local
+    byteArray.Append(AddRecord(srv.target, 47, ttl, {nextDomain: srv.target, typeBitMaps: [64]})) ' NSEC record
+    return byteArray
+end function
 
+function CreateAnswer(srvName as String, ansType as Integer, ttl as Integer, srv={}) as Object
+    byteArray = CreateObject("roByteArray")
+    
+    ' Header section (12 bytes for mDNS)
+    byteArray.Push(0)    ' ID high byte (0 for mDNS)
+    byteArray.Push(0)    ' ID low byte (0 for mDNS)
+    byteArray.Push(132)  ' Flags: QR=1 (response), Opcode=0, AA=1 (authoritative answer)
+    byteArray.Push(0)    ' Flags (continued)
+    byteArray.Push(0)    ' QDCOUNT high byte (no queries in response)
+    byteArray.Push(0)    ' QDCOUNT low byte
+    byteArray.Push(0)    ' ANCOUNT high byte (4 answers)
+    byteArray.Push(1)    ' ANCOUNT low byte (4 answers total)
+    byteArray.Push(0)    ' NSCOUNT high byte (0)
+    byteArray.Push(0)    ' NSCOUNT low byte (0)
+    byteArray.Push(0)    ' ARCOUNT high byte (0)
+    byteArray.Push(0)    ' ARCOUNT low byte (0)
+
+    ' Add the SRV record
+    byteArray.Append(AddRecord(srvName, ansType, ttl, srv)) ' SRV record
     return byteArray
 end function
 
@@ -384,6 +421,29 @@ function AddRecord(name as String, recordType as Integer, ttl as Integer, data a
         tempArray.Push((rdataLength >> 8) and 255) ' RDLENGTH high byte
         tempArray.Push(rdataLength and 255)        ' RDLENGTH low byte
         tempArray.Append(rdataArray)
+    else if recordtype = 16 then
+        rdataArray = CreateObject("roByteArray")
+        txtRecord = []
+        for each key in data
+            value = data[key]
+            pair = key + "=" + value.toStr()
+            txtRecord.push(pair + chr(0))  ' Null-terminate each key-value pair
+        end for
+        for each label in txtRecord
+            rdataArray.Push(label.len())
+            label = label.split("")
+            for i = 0 to label.count() - 1
+                rdataArray.Push(asc(label[i]))
+            end for
+        end for
+
+        rdataArray.Push(0) ' End of domain name
+        
+        rdataLength = rdataArray.Count()
+        tempArray.Push((rdataLength >> 8) and 255) ' RDLENGTH high byte
+        tempArray.Push(rdataLength and 255)        ' RDLENGTH low byte
+        tempArray.Append(rdataArray)
+
     else if recordType = 47 then ' NSEC record
         rdataArray = CreateObject("roByteArray")
         
