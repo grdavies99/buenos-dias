@@ -49,29 +49,31 @@ function getContent ()
                     parsed = ParseMDNSResponse(recieve)
                     ' if parsed.qdcount >= 1 then ?parsed.questions[0].name
                     if parsed.qdcount >= 1 
-                        payl = CreateObject("roByteArray")
-                        for each question in parsed.questions
-                            ?question.name
-                            if (question.name = adgeName or question.name = di.GetFriendlyName()+"."+adgeName)
+                        payl = []
+                        if (parsed.questions[0].name = adgeName or parsed.questions[0].name = di.GetFriendlyName()+"."+adgeName)
+                            for each question in parsed.questions
+                                ?question.name
                                 if question.type = 12 
                                     ?"sent ptr"
-                                    payl.append(CreateAnswer(adgeName, 12, 4500, srv.srvRecordName))
+                                    payl.push({ ttl: 4500, srvName: adgeName, ansType: 12, srv: srv.srvRecordName})
                                 else if question.type = 1
                                     ?"sent A"
-                                    payl.append(CreateAnswer(srv.target, 1, 4500, "192.168.1.166"))
+                                    payl.push({ ttl: 4500, srvName: srv.target, ansType: 1, srv: "192.168.1.166"})
                                 else if question.type = 33
                                     ?"sent SRV"
-                                    payl.append(CreateAnswer(srv.srvRecordName, 33, 4500, srv))
+                                    payl.push({ ttl: 4500, srvName: srv.srvRecordName, ansType: 33,  srv: srv})
                                 else if question.type = 16
                                     ?"sent txt"
-                                    payl.append(CreateAnswer(adgeName, 16, 4500, srv))
+                                    payl.push( { ttl: 4500, srvName: adgeName, ansType: 16,  srv: srv})
                                 else if question.type = 47
                                     ?"sent nsec"
-                                    payl.append(CreateAnswer(srv.target, 47, 4500, {nextDomain: srv.target, typeBitMaps: [64]}))
+                                    payl.push({ ttl: 4500, srvName: srv.target, ansType: 47,  srv: {nextDomain: srv.target, typeBitMaps: [64]}})
                                 end if
-                            end if
-                        end for
-                        udp.send(payl, 0, payl.count())
+                            end for
+                            ?"sent payload"
+                            CreateAnswer(payl)
+                            udp.send(payl, 0, payl.count())
+                        end if
                     end if
             End If
             continue = udp.eOk()
@@ -324,7 +326,7 @@ function CreateNSECAnswer(ttl as Integer, srv as object) as Object
     return byteArray
 end function
 
-function CreateAnswer(srvName as String, ansType as Integer, ttl as Integer, srv={}) as Object
+function CreateAnswer(data) as Object
     byteArray = CreateObject("roByteArray")
     
     ' Header section (12 bytes for mDNS)
@@ -335,14 +337,16 @@ function CreateAnswer(srvName as String, ansType as Integer, ttl as Integer, srv
     byteArray.Push(0)    ' QDCOUNT high byte (no queries in response)
     byteArray.Push(0)    ' QDCOUNT low byte
     byteArray.Push(0)    ' ANCOUNT high byte (4 answers)
-    byteArray.Push(1)    ' ANCOUNT low byte (4 answers total)
+    byteArray.Push(data.count())    ' ANCOUNT low byte (4 answers total)
     byteArray.Push(0)    ' NSCOUNT high byte (0)
     byteArray.Push(0)    ' NSCOUNT low byte (0)
     byteArray.Push(0)    ' ARCOUNT high byte (0)
     byteArray.Push(0)    ' ARCOUNT low byte (0)
 
     ' Add the SRV record
-    byteArray.Append(AddRecord(srvName, ansType, ttl, srv)) ' SRV record
+    for each obj in data
+        byteArray.Append(AddRecord(obj.srvName, obj.ansType, obj.ttl, obj.srv)) ' SRV record
+    end for
     return byteArray
 end function
 
