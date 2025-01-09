@@ -16,7 +16,8 @@ function awaitRequest()
     tcpListen.listen(4)
     if not tcpListen.eOK()
         print "Error creating listen socket"
-        stop
+    else
+        print "server listening"
     end if
     while True
         event = wait(0, messagePort)

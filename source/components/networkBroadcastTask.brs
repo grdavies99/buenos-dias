@@ -33,11 +33,13 @@ function getContent ()
         Priority:0 
         weight: 0 
         port: 16809
-        target: di.GetFriendlyName()+".local"
+        target: "gdevice"+".local"
     }    ' Add the NSEC record
     
     nsec = CreateNSECAnswer(4500, srv) ' NSEC record
-    payload = CreateMDNSAnswer(di.GetFriendlyName()+"."+adgeName, 4500, "192.168.1.166", adgeName, di.GetFriendlyName()+"."+adgeName, srv)
+    ip = di.GetIPAddrs()?.eth1
+    ' di.GetConnectionInfo().ipv6
+    payload = CreateMDNSAnswer(di.GetFriendlyName()+"."+adgeName, 4500, ip, adgeName, di.GetFriendlyName()+"."+adgeName, srv)
     udp.send(payload, 0, payload.count())
     m.results = []
     continue = udp.eOk()
@@ -47,32 +49,28 @@ function getContent ()
             If event.getSocketID()=udp.getID() and udp.isReadable()
                     message = udp.receive(recieve, 0, m.responselength) ' max 512 characters
                     parsed = ParseMDNSResponse(recieve)
-                    ' if parsed.qdcount >= 1 then ?parsed.questions[0].name
+                    ' if parsed.questions[0]?.name = srv.target then stop
                     if parsed.qdcount >= 1 
                         payl = []
-                        if (parsed.questions[0].name = adgeName or parsed.questions[0].name = di.GetFriendlyName()+"."+adgeName)
+                        if (parsed.questions[0].name = adgeName or parsed.questions[0].name = di.GetFriendlyName()+"."+adgeName or parsed.questions[0].name = srv.target)
                             for each question in parsed.questions
                                 ?question.name
-                                if question.type = 12 
-                                    ?"sent ptr"
+                                if question.type = 12
                                     payl.push({ ttl: 4500, srvName: adgeName, ansType: 12, srv: srv.srvRecordName})
                                 else if question.type = 1
-                                    ?"sent A"
-                                    payl.push({ ttl: 4500, srvName: srv.target, ansType: 1, srv: "192.168.1.166"})
+                                    payl.push({ ttl: 4500, srvName: srv.target, ansType: 1, srv: ip})
                                 else if question.type = 33
-                                    ?"sent SRV"
                                     payl.push({ ttl: 4500, srvName: srv.srvRecordName, ansType: 33,  srv: srv})
-                                else if question.type = 16
-                                    ?"sent txt"
-                                    payl.push( { ttl: 4500, srvName: adgeName, ansType: 16,  srv: srv})
+                                ' else if question.type = 16
+                                '     payl.push( { ttl: 4500, srvName: adgeName, ansType: 16,  srv: srv})
                                 else if question.type = 47
-                                    ?"sent nsec"
                                     payl.push({ ttl: 4500, srvName: srv.target, ansType: 47,  srv: {nextDomain: srv.target, typeBitMaps: [64]}})
                                 end if
                             end for
                             ?"sent payload"
-                            CreateAnswer(payl)
-                            udp.send(payl, 0, payl.count())
+                            ans = CreateAnswer(payl)
+                            udp.send(ans, 0, ans.count())
+                            ' udp.send(payload, 0, payload.count())
                         end if
                     end if
             End If
@@ -280,11 +278,11 @@ function CreateMDNSAnswer(domainName as String, ttl as Integer, aRecordData as S
     byteArray.Push(0)    ' QDCOUNT high byte (no queries in response)
     byteArray.Push(0)    ' QDCOUNT low byte
     byteArray.Push(0)    ' ANCOUNT high byte (4 answers)
-    byteArray.Push(3)    ' ANCOUNT low byte (4 answers total)
+    byteArray.Push(5)    ' ANCOUNT low byte (4 answers total)
     byteArray.Push(0)    ' NSCOUNT high byte (0)
     byteArray.Push(0)    ' NSCOUNT low byte (0)
     byteArray.Push(0)    ' ARCOUNT high byte (0)
-    byteArray.Push(2)    ' ARCOUNT low byte (0)
+    byteArray.Push(0)    ' ARCOUNT low byte (0)
 
 
     ' Add the PTR record _adge._tcp.local
@@ -342,9 +340,10 @@ function CreateAnswer(data) as Object
     byteArray.Push(0)    ' NSCOUNT low byte (0)
     byteArray.Push(0)    ' ARCOUNT high byte (0)
     byteArray.Push(0)    ' ARCOUNT low byte (0)
-
     ' Add the SRV record
     for each obj in data
+        ?obj.srvName
+        ?obj.ansType
         byteArray.Append(AddRecord(obj.srvName, obj.ansType, obj.ttl, obj.srv)) ' SRV record
     end for
     return byteArray
