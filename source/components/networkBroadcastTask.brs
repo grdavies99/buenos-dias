@@ -33,7 +33,7 @@ function getContent ()
         Priority:0 
         weight: 0 
         port: 16809
-        target: "gdevice"+".local"
+        target: "gdevice.local"
     }    ' Add the NSEC record
     
     nsec = CreateNSECAnswer(4500, srv) ' NSEC record
@@ -53,22 +53,28 @@ function getContent ()
                     if parsed.qdcount >= 1 
                         payl = []
                         if (parsed.questions[0].name = adgeName or parsed.questions[0].name = di.GetFriendlyName()+"."+adgeName or parsed.questions[0].name = srv.target)
+                            AACount = 0
                             for each question in parsed.questions
                                 ?question.name
                                 if question.type = 12
                                     payl.push({ ttl: 4500, srvName: adgeName, ansType: 12, srv: srv.srvRecordName})
+                                    payl.push({ ttl: 4500, srvName: srv.srvRecordName, ansType: 33,  srv: srv})
+                                    AACount += 1
                                 else if question.type = 1
                                     payl.push({ ttl: 4500, srvName: srv.target, ansType: 1, srv: ip})
                                 else if question.type = 33
                                     payl.push({ ttl: 4500, srvName: srv.srvRecordName, ansType: 33,  srv: srv})
-                                ' else if question.type = 16
-                                '     payl.push( { ttl: 4500, srvName: adgeName, ansType: 16,  srv: srv})
+                                else if question.type = 16
+                                    payl.push( { ttl: 4500, srvName: adgeName, ansType: 16,  srv: srv})
+                                    payl.push({ ttl: 4500, srvName: srv.srvRecordName, ansType: 33,  srv: srv})
+                                    AACount += 1
                                 else if question.type = 47
                                     payl.push({ ttl: 4500, srvName: srv.target, ansType: 47,  srv: {nextDomain: srv.target, typeBitMaps: [64]}})
                                 end if
                             end for
                             ?"sent payload"
-                            ans = CreateAnswer(payl)
+                            AACount = 1
+                            ans = CreateAnswer(payl, AACount)
                             udp.send(ans, 0, ans.count())
                             ' udp.send(payload, 0, payload.count())
                         end if
@@ -324,7 +330,7 @@ function CreateNSECAnswer(ttl as Integer, srv as object) as Object
     return byteArray
 end function
 
-function CreateAnswer(data) as Object
+function CreateAnswer(data, AACount) as Object
     byteArray = CreateObject("roByteArray")
     
     ' Header section (12 bytes for mDNS)
@@ -335,11 +341,11 @@ function CreateAnswer(data) as Object
     byteArray.Push(0)    ' QDCOUNT high byte (no queries in response)
     byteArray.Push(0)    ' QDCOUNT low byte
     byteArray.Push(0)    ' ANCOUNT high byte (4 answers)
-    byteArray.Push(data.count())    ' ANCOUNT low byte (4 answers total)
+    byteArray.Push(data.count()-AACount)    ' ANCOUNT low byte (4 answers total)
     byteArray.Push(0)    ' NSCOUNT high byte (0)
     byteArray.Push(0)    ' NSCOUNT low byte (0)
     byteArray.Push(0)    ' ARCOUNT high byte (0)
-    byteArray.Push(0)    ' ARCOUNT low byte (0)
+    byteArray.Push(AACount)    ' ARCOUNT low byte (0)
     ' Add the SRV record
     for each obj in data
         ?obj.srvName
