@@ -40,14 +40,25 @@ function awaitRequest()
                 closed = False
                 if connection.isReadable()
                     received = connection.receive(buffer, 0, 512)
-                    print "received is " received
+                    ' ?" Received "; received;
                     if received > 0
-                        print "Echo input: '"; buffer.ToAsciiString(); "'"
-                        ' If we are unable to send, just drop data for now.
-                        ' You could use notifywritable and buffer data, but that is
-                        ' omitted for clarity.
-                        connection.send(buffer, 0, received)
+                        answer = buffer.ToAsciiString()
+                        print "Received: '"; answer; "'"
+                        buffer = FormatJson({
+                            "id": "12345",
+                            "name": "Sample Product",
+                            "description": "This is a sample product description.",
+                            "price": 43.99,
+                            "currency": "USD",
+                            "image": "https://t3.ftcdn.net/jpg/02/36/99/22/360_F_236992283_sNOxCVQeFLd5pdqaKGh8DRGMZy7P4XKm.jpg",
+                            "inStock": true
+                          })
+                        print "Echo input: '"; buffer; "'"
+                        ?connection.SendStr(buffer)
+                        buffer = CreateObject("roByteArray")
+                        buffer[512] = 0
                     else if received=0 ' client closed
+                        print "client closed connection"
                         closed = True
                     end if
                 end if

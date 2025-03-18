@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="videoscreen" extends="Scene"> 
+	<children>
+      <LayoutGroup id="myLabel">
+      <!-- <video url="s3://elasticbeanstalk-us-west-1-017109718017/SintelStitching/output.m3u8"/> -->
+      <!-- create a static scenegraph video node -->
+      <Video id="myVideo" >
+        <rectangle id="textbadge" visible="false" translation="[1049, 552]" height="42" width="202" color="0x000043" >
+          <rectangle id="textborder" translation="[1, 1]" height="40" width="200" color="0x8ea9e8" >
+            <Label id="text" translation="[6, 9]" color="0x000043" text="Hello, World!" />
+          </rectangle>
+        </rectangle>
+      </Video>
+      </LayoutGroup>
+        <NetworkBroadcastTask id="udptask"/>
+    </children>
+    <script type="text/brightscript" uri="videoscreen.brs" />
+<!-- End of BrightScript Portion -->
+</component>

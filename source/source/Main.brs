@@ -13,7 +13,7 @@ sub Main()
     screen.setMessagePort(m.port)
 
     'Create a scene and load /components/helloworld.xml'
-    scene = screen.CreateScene("HelloWorld")
+    scene = screen.CreateScene("videoscreen")
     screen.show()' vscode_rdb_on_device_component_entry
 
     while(true)

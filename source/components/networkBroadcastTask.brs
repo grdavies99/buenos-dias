@@ -55,28 +55,22 @@ function getContent ()
                         if (parsed.questions[0].name = adgeName or parsed.questions[0].name = di.GetFriendlyName()+"."+adgeName or parsed.questions[0].name = srv.target)
                             AACount = 0
                             for each question in parsed.questions
-                                ?question.name
+                                ' ?question.name
                                 if question.type = 12
                                     payl.push({ ttl: 4500, srvName: adgeName, ansType: 12, srv: srv.srvRecordName})
-                                    payl.push({ ttl: 4500, srvName: srv.srvRecordName, ansType: 33,  srv: srv})
-                                    AACount += 1
                                 else if question.type = 1
                                     payl.push({ ttl: 4500, srvName: srv.target, ansType: 1, srv: ip})
                                 else if question.type = 33
                                     payl.push({ ttl: 4500, srvName: srv.srvRecordName, ansType: 33,  srv: srv})
                                 else if question.type = 16
-                                    payl.push( { ttl: 4500, srvName: adgeName, ansType: 16,  srv: srv})
-                                    payl.push({ ttl: 4500, srvName: srv.srvRecordName, ansType: 33,  srv: srv})
-                                    AACount += 1
+                                    payl.push( { ttl: 4500, srvName: di.GetFriendlyName()+"."+adgeName, ansType: 16,  srv: srv})
                                 else if question.type = 47
                                     payl.push({ ttl: 4500, srvName: srv.target, ansType: 47,  srv: {nextDomain: srv.target, typeBitMaps: [64]}})
                                 end if
                             end for
-                            ?"sent payload"
-                            AACount = 1
                             ans = CreateAnswer(payl, AACount)
+                            ' ?"sent payload"
                             udp.send(ans, 0, ans.count())
-                            ' udp.send(payload, 0, payload.count())
                         end if
                     end if
             End If
@@ -348,8 +342,8 @@ function CreateAnswer(data, AACount) as Object
     byteArray.Push(AACount)    ' ARCOUNT low byte (0)
     ' Add the SRV record
     for each obj in data
-        ?obj.srvName
-        ?obj.ansType
+        ' ?obj.srvName
+        ' ?obj.ansType
         byteArray.Append(AddRecord(obj.srvName, obj.ansType, obj.ttl, obj.srv)) ' SRV record
     end for
     return byteArray
