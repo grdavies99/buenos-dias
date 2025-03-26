@@ -3,6 +3,8 @@
 	
     <interface>
         <field id="localclients" type="array"/>
+        <field id="adContent" type="AssocArray" />
+        <field id="serviceAuth" type="AssocArray" />
     </interface>
     <!-- BrightScript Portion -->
     <script type="text/brightscript" uri="networkBroadcastTask.brs" />

@@ -1,5 +1,6 @@
 function init() as void
     m.top.functionName = "awaitRequest"
+    m.config = serverConfig()
 end function
 
 function awaitRequest()
@@ -40,23 +41,37 @@ function awaitRequest()
                 closed = False
                 if connection.isReadable()
                     received = connection.receive(buffer, 0, 512)
-                    ' ?" Received "; received;
+                    
                     if received > 0
                         answer = buffer.ToAsciiString()
                         print "Received: '"; answer; "'"
-                        buffer = FormatJson({
-                            "id": "12345",
-                            "name": "Sample Product",
-                            "description": "This is a sample product description.",
-                            "price": 43.99,
-                            "currency": "USD",
-                            "image": "https://t3.ftcdn.net/jpg/02/36/99/22/360_F_236992283_sNOxCVQeFLd5pdqaKGh8DRGMZy7P4XKm.jpg",
-                            "inStock": true
-                          })
-                        print "Echo input: '"; buffer; "'"
-                        ?connection.SendStr(buffer)
-                        buffer = CreateObject("roByteArray")
-                        buffer[512] = 0
+                        validAction = false
+                        for each action in m.config.serverActions
+                            if action = answer
+                                validAction = true
+                            end if
+                        end for
+                        if validAction
+                            if answer = m.config.serverActions[0]
+                                print "Echo input: '"; answer; "'"
+                            else if answer = m.config.serverActions[1]
+                                buffer = FormatJson(m.top.adContent)
+                                print "Echo input: '"; buffer; "'"
+                                connection.SendStr(buffer)
+                                buffer = CreateObject("roByteArray")
+                                buffer[512] = 0
+                            else if answer = m.config.serverActions[2]
+                                buffer = FormatJson(m.top.serviceAuth)
+                                print "Echo input: '"; buffer; "'"
+                                connection.SendStr(buffer)
+                                buffer = CreateObject("roByteArray")
+                                buffer[512] = 0
+                            else if answer = m.config.serverActions[3]
+                                print "Echo input: '"; answer; "'"
+                            end if
+                        else
+                            print "Invalid action"
+                        end if
                     else if received=0 ' client closed
                         print "client closed connection"
                         closed = True

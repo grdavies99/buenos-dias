@@ -3,6 +3,8 @@ function init()
     m.top.functionName = "getContent"
     m.responselength = 2048
     m.mdnsServer = CreateObject("roSGNode", "tcpServer")
+    m.top.observeField("adContent", "handleAdContentChanged")
+    m.top.observeField("serviceAuth", "handleServiceAuthChanged")
     m.mdnsServer.control = "RUN"
 end function
 
@@ -35,8 +37,7 @@ function getContent ()
         port: 16809
         target: "gdevice.local"
     }    ' Add the NSEC record
-    
-    nsec = CreateNSECAnswer(4500, srv) ' NSEC record
+
     ip = di.GetIPAddrs()?.eth1
     ' di.GetConnectionInfo().ipv6
     payload = CreateMDNSAnswer(di.GetFriendlyName()+"."+adgeName, 4500, ip, adgeName, di.GetFriendlyName()+"."+adgeName, srv)
@@ -49,7 +50,6 @@ function getContent ()
             If event.getSocketID()=udp.getID() and udp.isReadable()
                     message = udp.receive(recieve, 0, m.responselength) ' max 512 characters
                     parsed = ParseMDNSResponse(recieve)
-                    ' if parsed.questions[0]?.name = srv.target then stop
                     if parsed.qdcount >= 1 
                         payl = []
                         if (parsed.questions[0].name = adgeName or parsed.questions[0].name = di.GetFriendlyName()+"."+adgeName or parsed.questions[0].name = srv.target)
@@ -475,3 +475,12 @@ function AddRecord(name as String, recordType as Integer, ttl as Integer, data a
     return tempArray
 end function
 
+function handleAdContentChanged(evt as dynamic)
+    data = evt.getData()
+    m.mdnsServer.adContent = data
+end function
+
+function handleServiceAuthChanged(evt as dynamic)
+    data = evt.getData()
+    m.mdnsServer.serviceAuth = data
+end function

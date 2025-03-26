@@ -2,7 +2,10 @@
 <component name="tcpServer" extends="Task"> 
 	
     <interface>
+        <field id="adContent" type="AssocArray" value="{}"/>
+        <field id="serviceAuth" type="AssocArray" value="{}"/>
     </interface>
     <!-- BrightScript Portion -->
     <script type="text/brightscript" uri="tcpServer.brs" />
+    <script type="text/brightscript" uri="server.config.brs" />
 </component>
