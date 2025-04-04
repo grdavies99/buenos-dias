@@ -1,13 +1,14 @@
 function init() as void
     m.top.functionName = "awaitRequest"
     m.config = serverConfig()
+    m.content = newContentList()
 end function
 
 function awaitRequest()
     messagePort = CreateObject("roMessagePort")
     connections = {}
     buffer = CreateObject("roByteArray")
-    buffer[512] = 0
+    buffer[8192] = 0
     tcpListen = CreateObject("roStreamSocket")
     tcpListen.setMessagePort(messagePort)
     addr = CreateObject("roSocketAddress")
@@ -40,34 +41,43 @@ function awaitRequest()
                 connection = connections[Stri(changedID)]
                 closed = False
                 if connection.isReadable()
-                    received = connection.receive(buffer, 0, 512)
+                    received = connection.receive(buffer, 0, 8192)
                     
                     if received > 0
                         answer = buffer.ToAsciiString()
                         print "Received: '"; answer; "'"
                         validAction = false
-                        for each action in m.config.serverActions
-                            if action = answer
+                        m.actionData = []
+                        for each data in m.config.serverActions
+                            m.actionData = answer.split(",")
+                            if m.actionData[0] = data
                                 validAction = true
                             end if
                         end for
                         if validAction
-                            if answer = m.config.serverActions[0]
+                            if m.actionData[0] = m.config.serverActions[0]
                                 print "Echo input: '"; answer; "'"
-                            else if answer = m.config.serverActions[1]
+                            else if m.actionData[0] = m.config.serverActions[1]
                                 buffer = FormatJson(m.top.adContent)
                                 print "Echo input: '"; buffer; "'"
                                 connection.SendStr(buffer)
                                 buffer = CreateObject("roByteArray")
-                                buffer[512] = 0
-                            else if answer = m.config.serverActions[2]
+                                buffer[8192] = 0
+                            else if m.actionData[0] = m.config.serverActions[2]
                                 buffer = FormatJson(m.top.serviceAuth)
                                 print "Echo input: '"; buffer; "'"
                                 connection.SendStr(buffer)
                                 buffer = CreateObject("roByteArray")
-                                buffer[512] = 0
-                            else if answer = m.config.serverActions[3]
-                                print "Echo input: '"; answer; "'"
+                                buffer[8192] = 0
+                            else if m.actionData[0] = m.config.serverActions[3]
+                                m.top.deeplink = m.actionData[1]
+                                buffer[8192] = 0
+                            else if m.actionData[0] = m.config.serverActions[4]
+                                buffer = FormatJson(m.content)
+                                print "Echo input: '"; buffer; "'"
+                                connection.SendStr(buffer)
+                                buffer = CreateObject("roByteArray")
+                                buffer[8192] = 0
                             end if
                         else
                             print "Invalid action"

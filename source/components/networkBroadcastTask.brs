@@ -5,6 +5,7 @@ function init()
     m.mdnsServer = CreateObject("roSGNode", "tcpServer")
     m.top.observeField("adContent", "handleAdContentChanged")
     m.top.observeField("serviceAuth", "handleServiceAuthChanged")
+    m.mdnsServer.observeField("deepLink", "handleDeepLinkChanged")
     m.mdnsServer.control = "RUN"
 end function
 
@@ -483,4 +484,10 @@ end function
 function handleServiceAuthChanged(evt as dynamic)
     data = evt.getData()
     m.mdnsServer.serviceAuth = data
+end function
+
+function handleDeepLinkChanged(evt as dynamic)
+    data = evt.getData()
+    ? "handleDeepLinkChanged: " + data
+    m.top.deepLink = data
 end function

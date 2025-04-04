@@ -12,7 +12,8 @@ function serverConfig()
             "remote",
             "adContent",
             "serviceAuth",
-            "deeplink"
+            "deeplink",
+            "content"
         ]   
     }
 end function

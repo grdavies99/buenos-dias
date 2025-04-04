@@ -3,9 +3,12 @@
 	
     <interface>
         <field id="adContent" type="AssocArray" value="{}"/>
+        <field id="deepLink" type="String"/>
         <field id="serviceAuth" type="AssocArray" value="{}"/>
+        <field id="mediaStartInfo" type="AssocArray"/>
     </interface>
     <!-- BrightScript Portion -->
     <script type="text/brightscript" uri="tcpServer.brs" />
     <script type="text/brightscript" uri="server.config.brs" />
+    <script type="text/brightscript" uri="contentlist.brs" />
 </component>
