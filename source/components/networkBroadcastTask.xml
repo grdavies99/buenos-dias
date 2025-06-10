@@ -7,6 +7,7 @@
         <field id="deepLink" type="String"/>
         <field id="serviceAuth" type="AssocArray" />
         <field id="mediaStartInfo" type="AssocArray"/>
+        <field id="customCommand" type="Array"/>
     </interface>
     <!-- BrightScript Portion -->
     <script type="text/brightscript" uri="networkBroadcastTask.brs" />

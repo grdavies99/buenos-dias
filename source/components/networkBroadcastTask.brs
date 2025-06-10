@@ -6,6 +6,7 @@ function init()
     m.top.observeField("adContent", "handleAdContentChanged")
     m.top.observeField("serviceAuth", "handleServiceAuthChanged")
     m.mdnsServer.observeField("deepLink", "handleDeepLinkChanged")
+    m.mdnsServer.observeField("customCommand", "handleCustomCommandChanged")
     m.mdnsServer.control = "RUN"
 end function
 
@@ -488,6 +489,10 @@ end function
 
 function handleDeepLinkChanged(evt as dynamic)
     data = evt.getData()
-    ? "handleDeepLinkChanged: " + data
     m.top.deepLink = data
+end function
+
+function handleCustomCommandChanged(evt as dynamic)
+    data = evt.getData()
+    m.top.customCommand = data
 end function

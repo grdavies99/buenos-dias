@@ -78,6 +78,8 @@ function awaitRequest()
                                 connection.SendStr(buffer)
                                 buffer = CreateObject("roByteArray")
                                 buffer[8192] = 0
+                            else
+                                m.top.customCommand = m.actionData
                             end if
                         else
                             print "Invalid action"
