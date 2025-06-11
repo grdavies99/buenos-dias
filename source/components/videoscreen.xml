@@ -12,7 +12,7 @@
         </rectangle>
       </Video>
       </LayoutGroup>
-        <NetworkBroadcastTask id="udptask"/>
+        <SSDPConductor id="udptask"/>
     </children>
     <script type="text/brightscript" uri="videoscreen.brs" />
 <!-- End of BrightScript Portion -->

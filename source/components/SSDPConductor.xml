@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="SSDPConductor" extends="node"> 
+	
+    <interface>
+        <field id="help" type="AssocArray"/>
+        <field id="BroadIO" type="AssocArray"/>
+        <field id="customCommand" type="Array"/>
+        <field id="recievers" type="array"/>
+        <function name="createReciever" />
+    </interface>
+    <!-- BrightScript Portion -->
+    <script type="text/brightscript" uri="SSDPConductor.brs" />
+</component>

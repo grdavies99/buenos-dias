@@ -5,8 +5,11 @@
   function init()
     m.top.setFocus(true)
     m.bonjourTask = m.top.findNode("udptask")
-    m.bonjourTask.control = "RUN"
-    m.bonjourTask.observeField("deepLink", "deepLinkHandler")
+    m.bonjourtask.callfunc("createReciever", {
+      "name": "adge",
+      "port": 16809,
+      "target": "gdevice",
+    })
     m.videocontent = createObject("RoSGNode", "ContentNode")
     m.videocontent.title = "Sintel"
     m.videocontent.streamformat = "mp4"

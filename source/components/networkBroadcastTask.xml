@@ -8,6 +8,8 @@
         <field id="serviceAuth" type="AssocArray" />
         <field id="mediaStartInfo" type="AssocArray"/>
         <field id="customCommand" type="Array"/>
+        <field id="initParams" type="AssocArray"/>
+        <function name="initReciever" />
     </interface>
     <!-- BrightScript Portion -->
     <script type="text/brightscript" uri="networkBroadcastTask.brs" />
