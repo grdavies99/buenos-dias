@@ -5,6 +5,7 @@
         <field id="localclients" type="array"/>
         <field id="adContent" type="AssocArray" />
         <field id="deepLink" type="String"/>
+        <field id="remote" type="String"/>
         <field id="serviceAuth" type="AssocArray" />
         <field id="mediaStartInfo" type="AssocArray"/>
         <field id="customCommand" type="Array"/>

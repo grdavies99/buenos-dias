@@ -2,6 +2,7 @@
 <component name="tcpServer" extends="Task"> 
 	
     <interface>
+        <field id="remote" type="String" value=""/>
         <field id="adContent" type="AssocArray" value="{}"/>
         <field id="deepLink" type="String"/>
         <field id="serviceAuth" type="AssocArray" value="{}"/>
