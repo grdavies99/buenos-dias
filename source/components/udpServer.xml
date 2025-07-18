@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="udpServer" extends="Task"> 
+	
+    <interface>
+        <field id="remote" type="String" value=""/>
+        <field id="adContent" type="AssocArray" value="{}"/>
+        <field id="deepLink" type="String"/>
+        <field id="serviceAuth" type="AssocArray" value="{}"/>
+        <field id="mediaStartInfo" type="AssocArray"/>
+        <field id="customCommand" type="Array" value="[]"/>
+    </interface>
+    <!-- BrightScript Portion -->
+    <script type="text/brightscript" uri="udpServer.brs" />
+    <script type="text/brightscript" uri="server.config.brs" />
+    <script type="text/brightscript" uri="contentlist.brs" />
+</component>

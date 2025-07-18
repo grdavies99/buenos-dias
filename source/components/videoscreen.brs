@@ -7,6 +7,7 @@
     m.bonjourTask = m.top.findNode("udptask")
     m.bonjourTask.control = "RUN"
     m.bonjourTask.observeField("deepLink", "deepLinkHandler")
+    m.bonjourTask.observeField("remote", "remoteHandler")
     m.videocontent = createObject("RoSGNode", "ContentNode")
     m.videocontent.title = "Sintel"
     m.videocontent.streamformat = "mp4"
@@ -47,15 +48,13 @@
     m.video.content = m.videocontent
     m.video.control = "play"
   end function
-  ' function handleClientsChanged(evt as dynamic)
-  '   for each client in evt.getData()
-      
-  '     dataobject = CreateObject("rosgNode", "ClientDataObject")
-  '     dataobject.callfunc("initobject", client)
-  '     label = CreateObject("rosgNode", "Label")
-  '     label.text = dataobject.callfunc("getservicedevice") + ", service type: " + dataobject.callfunc("getservicename") + ", IP Address: " + dataobject.callfunc("getserviceip") + ", Port: " + dataobject.callfunc("getservicePort").toStr()
-  '     label.font.size=27
-  '     label.color="0x72D7EEFF"
-  '     m.myLabelgroup.appendChild(Label)
-  '   end for
-  ' end function
+
+  function remoteHandler(event as dynamic)
+    evt = event.getData()
+    ? "remoteHandler: " + evt
+    ' if evt <> invalid and evt <> ""
+    '     m.videocontent.url = evt
+    '     m.video.content = m.videocontent
+    '     m.video.control = "play"
+    ' end if
+  end function

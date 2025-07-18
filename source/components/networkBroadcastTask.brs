@@ -2,7 +2,7 @@ function init()
     'ip address 224.0.0.251  udp port  5353
     m.top.functionName = "getContent"
     m.responselength = 2048
-    m.mdnsServer = CreateObject("roSGNode", "tcpServer")
+    m.mdnsServer = CreateObject("roSGNode", "udpServer")
     m.top.observeField("adContent", "handleAdContentChanged")
     m.top.observeField("serviceAuth", "handleServiceAuthChanged")
     m.mdnsServer.observeField("remote", "handleRemoteChanged")
@@ -15,6 +15,7 @@ function getContent ()
     msgPort = createobject("roMessagePort")
     udp = createobject("roDatagramSocket")
     udp.setMessagePort(msgPort) 'notifications for udp come to msgPort
+
     addr = createobject("roSocketAddress")
     addr.setPort(5353)
     udp.setAddress(addr) ' bind to all host addresses on port 54321
@@ -22,6 +23,7 @@ function getContent ()
     udp.setSendToAddress(addr) ' peer IP and port
     udp.notifyReadable(true)
     udp.setMulticastTTL(255)
+
     recieve = CreateObject("roByteArray")
     mask = CreateObject("roByteArray")
     nsec = CreateObject("roByteArray")
@@ -30,7 +32,7 @@ function getContent ()
         mask.push(i)
     end for
     di = createobject("roDeviceInfo")
-    adgeName = "_adge._tcp.local"
+    adgeName = "_adge._udp.local"
     serviceName = "_services._dns-sd._udp.local"
 
     srv = {
