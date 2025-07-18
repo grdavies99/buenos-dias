@@ -5,7 +5,7 @@
 '** https://docs.roku.com/doc/developersdk/en-us
 '*************************************************************
 
-sub Main()
+sub Main(args as dynamic)
     print "in showChannelSGScreen"
     'Indicate this is a Roku SceneGraph application'
     screen = CreateObject("roSGScreen")

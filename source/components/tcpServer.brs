@@ -1,12 +1,14 @@
 function init() as void
     m.top.functionName = "awaitRequest"
+    m.config = serverConfig()
+    m.content = newContentList()
 end function
 
 function awaitRequest()
     messagePort = CreateObject("roMessagePort")
     connections = {}
     buffer = CreateObject("roByteArray")
-    buffer[512] = 0
+    buffer[8192] = 0
     tcpListen = CreateObject("roStreamSocket")
     tcpListen.setMessagePort(messagePort)
     addr = CreateObject("roSocketAddress")
@@ -39,24 +41,40 @@ function awaitRequest()
                 connection = connections[Stri(changedID)]
                 closed = False
                 if connection.isReadable()
-                    received = connection.receive(buffer, 0, 512)
-                    ' ?" Received "; received;
+                    received = connection.receive(buffer, 0, 8192)
+                    
                     if received > 0
                         answer = buffer.ToAsciiString()
                         print "Received: '"; answer; "'"
-                        buffer = FormatJson({
-                            "id": "12345",
-                            "name": "Sample Product",
-                            "description": "This is a sample product description.",
-                            "price": 43.99,
-                            "currency": "USD",
-                            "image": "https://t3.ftcdn.net/jpg/02/36/99/22/360_F_236992283_sNOxCVQeFLd5pdqaKGh8DRGMZy7P4XKm.jpg",
-                            "inStock": true
-                          })
-                        print "Echo input: '"; buffer; "'"
-                        ?connection.SendStr(buffer)
-                        buffer = CreateObject("roByteArray")
-                        buffer[512] = 0
+                        validAction = false
+                        m.actionData = []
+                        actionData = answer.split(";")
+                        if actionData.count() = 0
+                            m.actionData = answer.split(":")
+                        else
+                            for each item in actionData
+                                splitItem = item.split(":")
+                                for each data in m.config.serverActions
+                                    if splitItem[0] = data
+                                        m.actionData = splitItem
+                                        handleValidAction(item, connection)
+                                    end if
+                                end for
+                            end for
+                            buffer = CreateObject("roByteArray")
+                            buffer[8192] = 0 
+                            validAction = invalid
+                        end if
+                        
+                        if validAction <> invalid and validAction
+                            handleValidAction(answer, connection)
+                            buffer = CreateObject("roByteArray")
+                            buffer[8192] = 0
+                        else if validAction <> invalid
+                            print "Invalid action"
+                            buffer = CreateObject("roByteArray")
+                            buffer[8192] = 0
+                        end if
                     else if received=0 ' client closed
                         print "client closed connection"
                         closed = True
@@ -77,3 +95,33 @@ function awaitRequest()
         connections[id].close()
     end for
 End Function
+
+Function handleValidAction(answer as String, connection as Object)
+    if m.actionData[0] = m.config.serverActions[0]
+        ' remote
+        print "Echo input: '"; answer; "'"
+        m.top.remote = m.actionData[1]
+    else if m.actionData[0] = m.config.serverActions[1]
+        ' ad content
+        buffer = FormatJson(m.top.adContent)
+        print "Echo input: '"; buffer; "'"
+        connection.SendStr(buffer)
+    else if m.actionData[0] = m.config.serverActions[2]
+        ' service auth
+        buffer = FormatJson(m.top.serviceAuth)
+        print "Echo input: '"; buffer; "'"
+        connection.SendStr(buffer)
+        buffer = CreateObject("roByteArray")
+    else if m.actionData[0] = m.config.serverActions[3]
+        ' deeplink
+        m.top.deeplink = m.actionData[1]
+    else if m.actionData[0] = m.config.serverActions[4]
+        ' content
+        buffer = FormatJson(m.content)
+        print "Echo input: '"; buffer; "'"
+        connection.SendStr(buffer)
+    else
+        ' custom command
+        m.top.customCommand = m.actionData
+    end if
+end function

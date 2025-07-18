@@ -2,7 +2,12 @@ function init()
     'ip address 224.0.0.251  udp port  5353
     m.top.functionName = "getContent"
     m.responselength = 2048
-    m.mdnsServer = CreateObject("roSGNode", "tcpServer")
+    m.mdnsServer = CreateObject("roSGNode", "udpServer")
+    m.top.observeField("adContent", "handleAdContentChanged")
+    m.top.observeField("serviceAuth", "handleServiceAuthChanged")
+    m.mdnsServer.observeField("remote", "handleRemoteChanged")
+    m.mdnsServer.observeField("deepLink", "handleDeepLinkChanged")
+    m.mdnsServer.observeField("customCommand", "handleCustomCommandChanged")
     m.mdnsServer.control = "RUN"
 end function
 
@@ -10,6 +15,7 @@ function getContent ()
     msgPort = createobject("roMessagePort")
     udp = createobject("roDatagramSocket")
     udp.setMessagePort(msgPort) 'notifications for udp come to msgPort
+
     addr = createobject("roSocketAddress")
     addr.setPort(5353)
     udp.setAddress(addr) ' bind to all host addresses on port 54321
@@ -17,6 +23,7 @@ function getContent ()
     udp.setSendToAddress(addr) ' peer IP and port
     udp.notifyReadable(true)
     udp.setMulticastTTL(255)
+
     recieve = CreateObject("roByteArray")
     mask = CreateObject("roByteArray")
     nsec = CreateObject("roByteArray")
@@ -25,7 +32,7 @@ function getContent ()
         mask.push(i)
     end for
     di = createobject("roDeviceInfo")
-    adgeName = "_adge._tcp.local"
+    adgeName = "_adge._udp.local"
     serviceName = "_services._dns-sd._udp.local"
 
     srv = {
@@ -35,8 +42,7 @@ function getContent ()
         port: 16809
         target: "gdevice.local"
     }    ' Add the NSEC record
-    
-    nsec = CreateNSECAnswer(4500, srv) ' NSEC record
+
     ip = di.GetIPAddrs()?.eth1
     ' di.GetConnectionInfo().ipv6
     payload = CreateMDNSAnswer(di.GetFriendlyName()+"."+adgeName, 4500, ip, adgeName, di.GetFriendlyName()+"."+adgeName, srv)
@@ -49,7 +55,6 @@ function getContent ()
             If event.getSocketID()=udp.getID() and udp.isReadable()
                     message = udp.receive(recieve, 0, m.responselength) ' max 512 characters
                     parsed = ParseMDNSResponse(recieve)
-                    ' if parsed.questions[0]?.name = srv.target then stop
                     if parsed.qdcount >= 1 
                         payl = []
                         if (parsed.questions[0].name = adgeName or parsed.questions[0].name = di.GetFriendlyName()+"."+adgeName or parsed.questions[0].name = srv.target)
@@ -475,3 +480,27 @@ function AddRecord(name as String, recordType as Integer, ttl as Integer, data a
     return tempArray
 end function
 
+function handleAdContentChanged(evt as dynamic)
+    data = evt.getData()
+    m.mdnsServer.adContent = data
+end function
+
+function handleServiceAuthChanged(evt as dynamic)
+    data = evt.getData()
+    m.mdnsServer.serviceAuth = data
+end function
+
+function handleRemoteChanged(evt as dynamic)
+    data = evt.getData()
+    m.top.remote = data
+end function
+
+function handleDeepLinkChanged(evt as dynamic)
+    data = evt.getData()
+    m.top.deepLink = data
+end function
+
+function handleCustomCommandChanged(evt as dynamic)
+    data = evt.getData()
+    m.top.customCommand = data
+end function
