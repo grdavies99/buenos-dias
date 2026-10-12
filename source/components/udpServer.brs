@@ -46,7 +46,7 @@ function awaitRequest()
                         m.actionData = answer.split(":")
                     else
                         for each item in actionData
-                            splitItem = item.split(":")
+                            splitItem = SplitFirst(item, ":") ' value (eg. a deep link URL) may itself contain ":"
                             for each data in m.config.serverActions
                                 if splitItem[0] = data
                                     m.actionData = splitItem
@@ -84,6 +84,14 @@ function awaitRequest()
     for each id in connections
         connections[id].close()
     end for
+End Function
+
+' Splits only on the first occurrence of delim, so a value containing delim
+' (eg. "https://host/path") survives intact instead of being chopped up.
+Function SplitFirst(str as String, delim as String) as Object
+    idx = Instr(1, str, delim)
+    if idx = 0 then return [str]
+    return [Left(str, idx - 1), Mid(str, idx + Len(delim))]
 End Function
 
 Function handleValidAction(answer as String, connection as Object)

@@ -1,0 +1,16 @@
+{
+  "name": "adge-companion-client",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Zero-config discovery + companion command client for the buenos-dias Roku channel's mDNS/companion protocol",
+  "main": "discover.js",
+  "bin": {
+    "adge-discover": "./discover.js"
+  },
+  "scripts": {
+    "discover": "node discover.js"
+  },
+  "dependencies": {
+    "dns-packet": "^5.6.1"
+  }
+}

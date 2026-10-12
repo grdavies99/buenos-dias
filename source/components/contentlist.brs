@@ -1,5 +1,87 @@
+' Builds the "content" catalog served to companion clients over the UDP
+' command channel (see udpServer.brs's "content" action). Sourced from the
+' bundled IPTV playlist (pkg:/eng.m3u) when present, falling back to the
+' original Blender Foundation demo reel if it's missing.
+'
+' maxChannels is intentionally small: the whole catalog goes out as ONE
+' udp.SendStr() call (roDatagramSocket, not TCP), which only reliably
+' survives a single unfragmented UDP datagram (~1200 safe bytes). The
+' bundled playlist has ~3000 channels - sending them all would silently
+' fragment and likely get dropped on a real network, not just be "slow".
 function newContentList() as object
-    return [ 
+    maxChannels = 10
+    text = ReadAsciiFile("pkg:/eng.m3u")
+    if text = "" then return defaultContentList()
+
+    channels = ParseM3U(text, maxChannels)
+    if channels.count() = 0 then return defaultContentList()
+    return channels
+end function
+
+' Parses extended M3U (#EXTINF metadata line + URL line pairs) into the same
+' shape the rest of the channel expects: description/sources/subtitle/thumb/title/id.
+function ParseM3U(text as String, maxChannels as Integer) as Object
+    channels = []
+    lines = text.Replace(chr(13), "").Split(chr(10))
+
+    havePending = false
+    pendingLogo = ""
+    pendingGroup = ""
+    pendingTitle = ""
+
+    for each rawLine in lines
+        line = rawLine.Trim()
+        if channels.count() >= maxChannels
+            exit for
+        else if Left(line, 8) = "#EXTINF:"
+            pendingLogo = ExtractM3UAttr(line, "tvg-logo")
+            pendingGroup = ExtractM3UAttr(line, "group-title")
+            pendingTitle = ExtractM3UTitle(line)
+            havePending = true
+        else if line <> "" and Left(line, 1) <> "#" and havePending
+            channels.push({
+                "description": pendingGroup
+                "sources": [line]
+                "subtitle": pendingGroup
+                "thumb": pendingLogo
+                "title": pendingTitle
+                "id": channels.count().toStr()
+            })
+            havePending = false
+        end if
+    end for
+
+    return channels
+end function
+
+' Reads a quoted #EXTINF attribute, eg key="tvg-logo" -> ExtractM3UAttr(line, "tvg-logo").
+function ExtractM3UAttr(line as String, key as String) as String
+    marker = key + chr(61) + chr(34) ' ="
+    startIdx = Instr(1, line, marker)
+    if startIdx = 0 then return ""
+    startPos = startIdx + Len(marker)
+    endPos = Instr(startPos, line, chr(34))
+    if endPos = 0 then return ""
+    return Mid(line, startPos, endPos - startPos)
+end function
+
+' The channel's display name is everything after the LAST comma on the
+' #EXTINF line (the standard extended-M3U convention).
+function ExtractM3UTitle(line as String) as String
+    lastComma = 0
+    searchFrom = 1
+    while true
+        idx = Instr(searchFrom, line, ",")
+        if idx = 0 then exit while
+        lastComma = idx
+        searchFrom = idx + 1
+    end while
+    if lastComma = 0 then return ""
+    return Mid(line, lastComma + 1)
+end function
+
+function defaultContentList() as object
+    return [
         { "description" : "Big Buck Bunny tells the story of a giant rabbit with a heart bigger than himself. When one sunny day three rodents rudely harass him, something snaps... and the rabbit ain't no bunny anymore! In the typical cartoon tradition he prepares the nasty rodents a comical revenge.\n\nLicensed under the Creative Commons Attribution license\nhttp://www.bigbuckbunny.org",
           "sources" : [ "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" ],
           "subtitle" : "By Blender Foundation",
@@ -42,7 +124,7 @@ function newContentList() as object
           "title" : "For Bigger Joyrides",
           "id" : "6"
         },
-        { "description" :"Introducing Chromecast. The easiest way to enjoy online video and music on your TV—for when you want to make Buster's big meltdowns even bigger. For $35. Learn how to use Chromecast with Netflix and more at google.com/chromecast.", 
+        { "description" :"Introducing Chromecast. The easiest way to enjoy online video and music on your TV—for when you want to make Buster's big meltdowns even bigger. For $35. Learn how to use Chromecast with Netflix and more at google.com/chromecast.",
           "sources" : [ "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4" ],
           "subtitle" : "By Google",
           "thumb" : "images/ForBiggerMeltdowns.jpg",
@@ -63,7 +145,7 @@ function newContentList() as object
           "title" : "Subaru Outback On Street And Dirt",
           "id" : "9"
         },
-        { "description" : "Tears of Steel was realized with crowd-funding by users of the open source 3D creation tool Blender. Target was to improve and test a complete open and free pipeline for visual effects in film - and to make a compelling sci-fi film in Amsterdam, the Netherlands.  The film itself, and all raw material used for making it, have been released under the Creatieve Commons 3.0 Attribution license. Visit the tearsofsteel.org website to find out more about this, or to purchase the 4-DVD box with a lot of extras.  (CC) Blender Foundation - http://www.tearsofsteel.org", 
+        { "description" : "Tears of Steel was realized with crowd-funding by users of the open source 3D creation tool Blender. Target was to improve and test a complete open and free pipeline for visual effects in film - and to make a compelling sci-fi film in Amsterdam, the Netherlands.  The film itself, and all raw material used for making it, have been released under the Creatieve Commons 3.0 Attribution license. Visit the tearsofsteel.org website to find out more about this, or to purchase the 4-DVD box with a lot of extras.  (CC) Blender Foundation - http://www.tearsofsteel.org",
           "sources" : [ "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" ],
           "subtitle" : "By Blender Foundation",
           "thumb" : "images/TearsOfSteel.jpg",
