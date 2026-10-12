@@ -10,8 +10,9 @@
     m.bonjourTask.observeField("remote", "remoteHandler")
     m.videocontent = createObject("RoSGNode", "ContentNode")
     m.videocontent.title = "Sintel"
-    m.videocontent.streamformat = "mp4"
-    m.videocontent.url = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4"
+    m.videocontent.streamformat = "hls"
+    ' m.videocontent.url = "https://amg00793-amg00793c6-firetv-us-4067.playouts.now.amagi.tv/playlist.m3u8"
+    m.videocontent.url = "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_adv_example_hevc/master.m3u8"
 
     m.video = m.top.findNode("myvideo")
     m.video.content = m.videocontent

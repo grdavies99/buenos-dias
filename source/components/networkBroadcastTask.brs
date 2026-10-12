@@ -23,6 +23,8 @@ function getContent ()
     udp.setSendToAddress(addr) ' peer IP and port
     udp.notifyReadable(true)
     udp.setMulticastTTL(255)
+    joinedGroup = udp.JoinGroup(addr) ' binding alone does not receive multicast traffic - must join the group
+    if not joinedGroup then print "NetworkBroadcastTask: failed to join multicast group 224.0.0.251 - will not receive queries"
 
     recieve = CreateObject("roByteArray")
     mask = CreateObject("roByteArray")
@@ -43,21 +45,22 @@ function getContent ()
         target: "gdevice.local"
     }    ' Add the NSEC record
 
-    ip = di.GetIPAddrs()?.eth1
-    ' di.GetConnectionInfo().ipv6
-    payload = CreateMDNSAnswer(di.GetFriendlyName()+"."+adgeName, 4500, ip, adgeName, di.GetFriendlyName()+"."+adgeName, srv)
-    udp.send(payload, 0, payload.count())
+    AnnounceService(udp, di, adgeName, srv)
+    reannounceMs = 20 * 60 * 1000 ' re-announce well before the 4500s (75 min) record TTL expires
+    announceTimer = CreateObject("roTimespan")
     m.results = []
     continue = udp.eOk()
     While continue
-        event = wait(0, msgPort)
+        event = wait(5000, msgPort) ' bounded wait so idle time can still drive re-announcement below
         If type(event)="roSocketEvent"
             If event.getSocketID()=udp.getID() and udp.isReadable()
+                try
                     message = udp.receive(recieve, 0, m.responselength) ' max 512 characters
                     parsed = ParseMDNSResponse(recieve)
-                    if parsed.qdcount >= 1 
+                    if parsed.qdcount >= 1
                         payl = []
                         if (parsed.questions[0].name = adgeName or parsed.questions[0].name = di.GetFriendlyName()+"."+adgeName or parsed.questions[0].name = srv.target)
+                            ip = GetActiveIPAddr(di) ' pick up DHCP lease changes before answering
                             AACount = 0
                             for each question in parsed.questions
                                 ' ?question.name
@@ -78,17 +81,93 @@ function getContent ()
                             udp.send(ans, 0, ans.count())
                         end if
                     end if
+                catch e
+                    ' the multicast group carries every device's mDNS traffic, not just ours -
+                    ' a malformed/unexpected packet from someone else must not kill this responder
+                    print "NetworkBroadcastTask: ignoring unparseable mDNS packet: "; e
+                end try
             End If
             continue = udp.eOk()
         Else If event=invalid
-            print "Timeout"
-            continue = false
+            ' bounded wait() timed out with nothing to read - use the tick as a heartbeat to
+            ' proactively re-announce so peer caches refresh even if nothing re-queries us
+            if announceTimer.TotalMilliseconds() >= reannounceMs
+                AnnounceService(udp, di, adgeName, srv)
+                announceTimer.Mark()
+            end if
+            continue = udp.eOk()
         End If
         recieve = mask
     End While
     m.top.localclients = m.results
     udp.close() ' would happen automatically as udp goes out of scope
 
+end function
+
+' Sends an unsolicited mDNS announcement for the service, re-reading the
+' current IP each time so a DHCP lease change is reflected on the next cycle.
+' Immediately follows up with a self-query for the same service: some mDNS
+' caches/reflectors (router multicast bridging, third-party resolvers) only
+' pick up a record from an observed query+response round trip, not a bare
+' unsolicited announcement, so this "cements" the registration the same way
+' a real client's discovery request would.
+function AnnounceService(udp as Object, di as Object, adgeName as String, srv as Object) as Void
+    ip = GetActiveIPAddr(di)
+    instanceName = di.GetFriendlyName() + "." + adgeName
+    payload = CreateMDNSAnswer(instanceName, 4500, ip, adgeName, instanceName, srv)
+    udp.send(payload, 0, payload.count())
+    print "NetworkBroadcastTask: sent mDNS announcement for " + instanceName + " at " + ip
+
+    query = CreatePTRQuery(adgeName)
+    udp.send(query, 0, query.count())
+    print "NetworkBroadcastTask: sent self-query for " + adgeName + " to cement the registration"
+end function
+
+' Builds a minimal mDNS query packet asking for the PTR record of `name`.
+function CreatePTRQuery(name as String) as Object
+    byteArray = CreateObject("roByteArray")
+
+    byteArray.Push(0)    ' ID high byte
+    byteArray.Push(0)    ' ID low byte
+    byteArray.Push(0)    ' Flags
+    byteArray.Push(0)    ' Flags (continued)
+    byteArray.Push(0)    ' QDCOUNT high byte
+    byteArray.Push(1)    ' QDCOUNT low byte (1 question)
+    byteArray.Push(0)    ' ANCOUNT high byte
+    byteArray.Push(0)    ' ANCOUNT low byte
+    byteArray.Push(0)    ' NSCOUNT high byte
+    byteArray.Push(0)    ' NSCOUNT low byte
+    byteArray.Push(0)    ' ARCOUNT high byte
+    byteArray.Push(0)    ' ARCOUNT low byte
+
+    for each label in name.Split(".")
+        chars = label.Split("")
+        byteArray.Push(chars.count())
+        for i = 0 to chars.count() - 1
+            byteArray.Push(asc(chars[i]))
+        end for
+    end for
+    byteArray.Push(0) ' end of name
+
+    byteArray.Push(0)  ' QTYPE high byte
+    byteArray.Push(12) ' QTYPE low byte (PTR)
+    byteArray.Push(0)  ' QCLASS high byte
+    byteArray.Push(1)  ' QCLASS low byte (IN)
+
+    return byteArray
+end function
+
+' Roku reports addresses per interface ("eth1" wired, "wifi" wireless); most
+' devices are wifi-only, so fall back through the interfaces that are actually up.
+function GetActiveIPAddr(di as Object) as Object
+    addrs = di.GetIPAddrs()
+    if addrs = invalid then return invalid
+    if addrs.wifi <> invalid and addrs.wifi <> "" then return addrs.wifi
+    if addrs.eth1 <> invalid and addrs.eth1 <> "" then return addrs.eth1
+    for each key in addrs
+        if addrs[key] <> invalid and addrs[key] <> "" then return addrs[key]
+    end for
+    return invalid
 end function
 
 function ParseMDNSResponse(byteArray as Object) as Object

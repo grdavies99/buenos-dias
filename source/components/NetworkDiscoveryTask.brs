@@ -21,7 +21,7 @@ function getContent ()
         recieve.Push(i)
         mask.push(i)
     end for
-    serviceName = "_adge._tcp.local"
+    serviceName = "_adge._udp.local" ' must match the name advertised by NetworkBroadcastTask.brs
     payload = CreateMDNSQuery(serviceName, 1)
     udp.send(payload, 0, payload.count())
     m.results = []
