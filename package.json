@@ -1,5 +1,29 @@
 {
-  "dependencies": {
+  "name": "buenos-dias",
+  "version": "0.1.0",
+  "description": "mDNS / DNS-SD service advertising and discovery for Roku SceneGraph channels",
+  "keywords": [
+    "ropm",
+    "roku",
+    "brightscript",
+    "scenegraph",
+    "mdns",
+    "dns-sd",
+    "bonjour",
+    "zeroconf"
+  ],
+  "license": "SEE LICENSE IN LICENSE",
+  "files": [
+    "src/**/*"
+  ],
+  "ropm": {
+    "rootDir": "src"
+  },
+  "scripts": {
+    "lint": "bsc --project bsconfig.json && bsc --project demo/bsconfig.json"
+  },
+  "devDependencies": {
+    "brighterscript": "^0.65.0",
     "roku-deploy": "^3.12.2"
   }
 }

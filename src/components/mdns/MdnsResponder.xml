@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    Advertises a DNS-SD service over mDNS and answers queries for it.
+    Set the fields, then control = "RUN". Set control = "STOP" to send a goodbye and exit.
+    Config is read when the task starts.
+-->
+<component name="MdnsResponder" extends="Task">
+    <interface>
+        <!-- required: service type, eg. "_myapp._udp" (".local" is optional) -->
+        <field id="serviceType" type="string" />
+        <!-- required: port the service listens on -->
+        <field id="port" type="integer" />
+        <!-- instance name; defaults to the device's friendly name. Must not contain "." -->
+        <field id="instanceName" type="string" />
+        <!-- host name for the SRV/A records; defaults to the instance name with non-alphanumerics replaced by "-" -->
+        <field id="hostName" type="string" />
+        <!-- IPv4 address to advertise; defaults to the active interface, re-read on every announcement -->
+        <field id="ipAddress" type="string" />
+        <!-- TXT record key/values -->
+        <field id="txt" type="assocarray" />
+        <!-- TTL in seconds for PTR/TXT records; SRV/A use min(ttl, 120) per RFC 6762 10 -->
+        <field id="ttl" type="integer" value="4500" />
+        <!-- seconds between unsolicited re-announcements, 0 to disable -->
+        <field id="reannounceInterval" type="integer" value="1200" />
+
+        <!-- output: true while advertising -->
+        <field id="advertising" type="boolean" value="false" />
+        <!-- output: set if the responder could not start -->
+        <field id="error" type="string" />
+    </interface>
+    <script type="text/brightscript" uri="MdnsPacket.brs" />
+    <script type="text/brightscript" uri="MdnsResponder.brs" />
+</component>

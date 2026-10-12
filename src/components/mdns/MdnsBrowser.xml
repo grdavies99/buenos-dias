@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    Discovers instances of a DNS-SD service type on the LAN.
+    Set serviceType, observe "services", then control = "RUN".
+    The task ends after `timeout` seconds (state becomes "stop"), or when control = "STOP".
+-->
+<component name="MdnsBrowser" extends="Task">
+    <interface>
+        <!-- required: service type to browse, eg. "_myapp._udp" (".local" is optional) -->
+        <field id="serviceType" type="string" />
+        <!-- seconds to browse for, 0 to browse until stopped -->
+        <field id="timeout" type="integer" value="5" />
+
+        <!--
+            output, replaced whenever the set changes:
+            [{ name, fullName, serviceType, hostName, port, ipAddress, ipv6Address, txt, resolved }]
+            resolved is true once both port and ipAddress are known
+        -->
+        <field id="services" type="array" />
+        <!-- output: set if the browser could not start -->
+        <field id="error" type="string" />
+    </interface>
+    <script type="text/brightscript" uri="MdnsPacket.brs" />
+    <script type="text/brightscript" uri="MdnsBrowser.brs" />
+</component>

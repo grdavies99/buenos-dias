@@ -1,0 +1,11 @@
+{
+  "rootDir": ".",
+  "files": [
+    "manifest",
+    "source/**/*",
+    "components/**/*",
+    "images/**/*",
+    { "src": "../src/components/**/*", "dest": "components" }
+  ],
+  "createPackage": false
+}

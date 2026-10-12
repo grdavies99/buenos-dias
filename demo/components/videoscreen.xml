@@ -12,7 +12,8 @@
         </rectangle>
       </Video>
       </LayoutGroup>
-        <NetworkBroadcastTask id="udptask"/>
+        <MdnsResponder id="mdns" serviceType="_adge._udp" port="16809" hostName="gdevice.local" />
+        <udpServer id="server" />
     </children>
     <script type="text/brightscript" uri="videoscreen.brs" />
 <!-- End of BrightScript Portion -->
