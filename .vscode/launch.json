@@ -10,7 +10,14 @@
             "request": "launch",
             "host": "192.168.1.166",
             "password": "abcd",
-            "rootDir": "${workspaceFolder}/source",
+            "rootDir": "${workspaceFolder}/demo",
+            "files": [
+                "manifest",
+                "source/**/*",
+                "components/**/*",
+                "images/**/*",
+                { "src": "../src/components/**/*", "dest": "components" }
+            ],
             "injectRdbOnDeviceComponent": true
         }
     ]

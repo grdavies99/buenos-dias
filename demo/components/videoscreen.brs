@@ -4,10 +4,12 @@
 
   function init()
     m.top.setFocus(true)
-    m.bonjourTask = m.top.findNode("udptask")
-    m.bonjourTask.control = "RUN"
-    m.bonjourTask.observeField("deepLink", "deepLinkHandler")
-    m.bonjourTask.observeField("remote", "remoteHandler")
+    m.mdns = m.top.findNode("mdns")
+    m.mdns.control = "RUN"
+    m.server = m.top.findNode("server")
+    m.server.observeField("deepLink", "deepLinkHandler")
+    m.server.observeField("remote", "remoteHandler")
+    m.server.control = "RUN"
     m.videocontent = createObject("RoSGNode", "ContentNode")
     m.videocontent.title = "Sintel"
     m.videocontent.streamformat = "mp4"
